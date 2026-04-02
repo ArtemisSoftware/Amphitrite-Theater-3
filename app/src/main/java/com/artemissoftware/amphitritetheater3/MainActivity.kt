@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.artemissoftware.amphitritetheater3.pager.Carousel
+import com.artemissoftware.amphitritetheater3.pager.Images
 import com.artemissoftware.amphitritetheater3.ui.theme.AmphitriteTheater3Theme
 
 class MainActivity : ComponentActivity() {
@@ -21,7 +22,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             AmphitriteTheater3Theme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
-                    Carousel()
+                    Carousel(items = Images.cardImages, infiniteScroll = false)
                 }
             }
         }
