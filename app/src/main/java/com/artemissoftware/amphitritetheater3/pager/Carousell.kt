@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp as lerpDp
 import androidx.compose.ui.util.lerp
 import com.artemissoftware.amphitritetheater3.pager.Images.cardImages
 import kotlin.math.absoluteValue
@@ -35,14 +36,20 @@ fun Carousel(
         pagerSnapDistance = PagerSnapDistance.atMost(1)
     )
 
+    val focusedHeight = 479.dp
+    val unfocusedHeight = 436.dp
+
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
         HorizontalPager (
             modifier = Modifier
                 .align(Alignment.Center),
+            verticalAlignment = Alignment.CenterVertically,
             state = pagerState,
-            contentPadding = PaddingValues(horizontal = 52.dp),
+            contentPadding = PaddingValues(horizontal = 44.dp),
+            pageSpacing = 12.dp,
             beyondViewportPageCount = 2,
             flingBehavior = flingBehavior,
             key = { page -> page }
@@ -53,6 +60,16 @@ fun Carousel(
                 page = currentPage,
                 size = items.size
             )
+
+            val pageOffset = (
+                    (pagerState.currentPage - currentPage) +
+                            pagerState.currentPageOffsetFraction
+                    ).absoluteValue
+
+            val fraction = 1f - pageOffset.coerceIn(0f, 1f)
+
+            // ✅ interpolate height using the Dp-specific lerp
+            val height = lerpDp(unfocusedHeight, focusedHeight, fraction)
 
             PagerCard(
                 title = currentPage.toString(),
@@ -66,7 +83,7 @@ fun Carousel(
                         val fraction = 1f - pageOffset.coerceIn(0f, 1f)
 
                         // scale
-                        val scale = lerp(0.75f, 1f, fraction)
+                        val scale = lerp(0.95f, 1f, fraction)
                         scaleX = scale
                         scaleY = scale
 
@@ -74,10 +91,10 @@ fun Carousel(
                         alpha = lerp(0.3f, 1f, fraction)
 
                         // slight vertical shrink illusion
-                        translationY = lerp(40f, 0f, fraction)
+                        //translationY = lerp(40f, 0f, fraction)
 
                     }
-                    .height(400.dp)
+                    .height(height)
                     .fillMaxWidth()
             )
         }
