@@ -1,11 +1,9 @@
 package com.artemissoftware.amphitritetheater3.pager
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.PagerState
@@ -13,13 +11,11 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.lerp as lerpDp
-import androidx.compose.ui.util.lerp
 import com.artemissoftware.amphitritetheater3.pager.Images.cardImages
-import kotlin.math.absoluteValue
 
 @Composable
 fun Carousel(
@@ -28,8 +24,15 @@ fun Carousel(
     modifier: Modifier = Modifier
 ) {
 
+    val carouselConfig = rememberCarouselConfig(
+        itemsSize = items.size,
+        infiniteScroll = infiniteScroll
+    )
 
-    val pagerState = getPagerState(infiniteScroll = infiniteScroll, size = items.size)
+    val pagerState = getPagerState(
+        infiniteScroll = carouselConfig.infiniteScroll,
+        size = items.size
+    )
 
     val flingBehavior = PagerDefaults.flingBehavior(
         state = pagerState,
@@ -40,65 +43,89 @@ fun Carousel(
     val unfocusedHeight = 436.dp
 
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    BoxWithConstraints(modifier = modifier) {
+        val parentWidth = maxWidth
+        val cardWidth = parentWidth - carouselConfig.contentPadding.calculateLeftPadding(LocalLayoutDirection.current) * 2 - carouselConfig.pageSpacing
+
+        val dynamicPageSize_2 = when (items.size) {
+            1 -> PageSize.Fill
+            2 -> {
+                val leftPadding = carouselConfig.contentPadding.calculateLeftPadding(LocalLayoutDirection.current)
+                val rightPadding = carouselConfig.contentPadding.calculateRightPadding(LocalLayoutDirection.current)
+                val peek = 16.dp // or whatever peek you want to show of next card
+
+                val cardWidth = calculateTwoItemCardWidth(
+                    parentWidth = parentWidth,
+                    leftPadding = leftPadding,
+                    rightPadding = rightPadding,
+                    pageSpacing = carouselConfig.pageSpacing,
+                    peekWidth = peek
+                )
+
+                PageSize.Fixed(cardWidth)
+            }
+            else -> PageSize.Fill
+        }
+
+        val dynamicPageSize = rememberCarouselPageSize(
+            itemsSize = items.size,
+            parentWidth = parentWidth,
+            contentPadding = carouselConfig.contentPadding,
+            pageSpacing = carouselConfig.pageSpacing,
+            peekWidth = 16.dp // adjust peek width here
+        )
+
+
         HorizontalPager (
+            pageSize = dynamicPageSize,
             modifier = Modifier
                 .align(Alignment.Center),
             verticalAlignment = Alignment.CenterVertically,
             state = pagerState,
-            contentPadding = PaddingValues(horizontal = 44.dp),
-            pageSpacing = 12.dp,
-            beyondViewportPageCount = 2,
+            contentPadding = carouselConfig.contentPadding,
+            pageSpacing = carouselConfig.pageSpacing,
+            beyondViewportPageCount = carouselConfig.beyondViewportPageCount,
             flingBehavior = flingBehavior,
+            userScrollEnabled = carouselConfig.userScrollEnabled,
             key = { page -> page }
         ) { currentPage ->
 
             val currentIndex = getIndex(
-                infiniteScroll = infiniteScroll,
+                infiniteScroll = carouselConfig.infiniteScroll,
                 page = currentPage,
                 size = items.size
             )
 
-            val pageOffset = (
-                    (pagerState.currentPage - currentPage) +
-                            pagerState.currentPageOffsetFraction
-                    ).absoluteValue
 
-            val fraction = 1f - pageOffset.coerceIn(0f, 1f)
 
-            // ✅ interpolate height using the Dp-specific lerp
-            val height = lerpDp(unfocusedHeight, focusedHeight, fraction)
+            val pagerModifier = rememberPageModifier(
+                itemSize = items.size,
+                pagerState = pagerState,
+                currentPage = currentPage,
+                focusedHeight = focusedHeight,
+                unfocusedHeight = unfocusedHeight,
+                pageSpacing = carouselConfig.pageSpacing,
+                horizontalPadding = carouselConfig.contentPadding.calculateLeftPadding(LocalLayoutDirection.current),
+                parentWidth = parentWidth
+            )
 
             PagerCard(
-                title = currentPage.toString(),
+                title = currentPage.toString() + " - " + cardWidth + " -- " + (340.dp),
                 imageRes = items[currentIndex],
-                modifier = Modifier
-                    .graphicsLayer {
-                        val pageOffset = (
-                                (pagerState.currentPage - currentPage) + pagerState.currentPageOffsetFraction
-                                ).absoluteValue
-
-                        val fraction = 1f - pageOffset.coerceIn(0f, 1f)
-
-                        // scale
-                        val scale = lerp(0.95f, 1f, fraction)
-                        scaleX = scale
-                        scaleY = scale
-
-                        // alpha
-                        alpha = lerp(0.3f, 1f, fraction)
-
-                        // slight vertical shrink illusion
-                        //translationY = lerp(40f, 0f, fraction)
-
-                    }
-                    .height(height)
-                    .fillMaxWidth()
+                modifier = pagerModifier
             )
         }
     }
+}
+
+fun calculateTwoItemCardWidth(
+    parentWidth: Dp,
+    leftPadding: Dp,
+    rightPadding: Dp,
+    pageSpacing: Dp,
+    peekWidth: Dp
+): Dp {
+    return parentWidth - leftPadding - rightPadding - pageSpacing - peekWidth
 }
 
 @Composable
@@ -135,8 +162,28 @@ private fun getIndex(
 
 @Preview
 @Composable
+private fun Carousel_one_card_Preview() {
+    Carousel(
+        modifier = Modifier.fillMaxSize(),
+        items = cardImages.take(1)
+    )
+}
+
+@Preview
+@Composable
+private fun Carousel_two_cards_Preview() {
+    Carousel(
+        modifier = Modifier.fillMaxSize(),
+        items = cardImages.take(2)
+    )
+}
+
+@Preview
+@Composable
 private fun CarouselPreview() {
     Carousel(
+        modifier = Modifier.fillMaxSize(),
         items = cardImages
     )
 }
+
