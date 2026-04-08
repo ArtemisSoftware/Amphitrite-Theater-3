@@ -1,31 +1,28 @@
 package com.artemissoftware.amphitritetheater3.pager
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
-
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import kotlin.math.absoluteValue
 import androidx.compose.ui.unit.lerp as lerpDp
+import kotlin.math.absoluteValue
 
 @Composable
-fun rememberPageModifier(
-    itemSize: Int,
+fun pageModifier(
+    numberOfItems: Int,
     pagerState: PagerState,
     currentPage: Int,
     focusedHeight: Dp,
-    unfocusedHeight: Dp,
-    pageSpacing: Dp,
-    horizontalPadding: Dp,
-    parentWidth: Dp
+    unfocusedHeight: Dp
 ): Modifier {
 
     val pageOffset = (
@@ -36,39 +33,48 @@ fun rememberPageModifier(
     val fraction = 1f - pageOffset.coerceIn(0f, 1f)
     val height = lerpDp(unfocusedHeight, focusedHeight, fraction)
 
-    val density = LocalDensity.current
-
-    return when (itemSize) {
+    return when (numberOfItems) {
         1 -> {
             Modifier
                 .fillMaxWidth()
                 .height(height)
         }
-        2 -> {
-
-            val parentWidthPx = with(density) { parentWidth.toPx() }
-            val horizontalPaddingPx = with(density) { horizontalPadding.toPx() }
-            val pageSpacingPx = with(density) { pageSpacing.toPx() }
-
-            val cardWidthPx = parentWidthPx - horizontalPaddingPx * 2 - pageSpacingPx
-
-            Modifier
-                .graphicsLayer {
-                    alpha = lerp(0.3f, 1f, fraction)
-                }
-                .width(with(density) { cardWidthPx.toDp() })
-                .height(height)
-        }
         else -> {
             Modifier
+                .fillMaxWidth()
                 .graphicsLayer {
                     val scale = lerp(0.95f, 1f, fraction)
-                    scaleX = scale
+                    //scaleX = scale
                     scaleY = scale
                     alpha = lerp(0.3f, 1f, fraction)
                 }
-                .fillMaxWidth()
                 .height(height)
+        }
+    }
+}
+
+
+@Composable
+fun rememberCarouselPageSize(
+    itemsSize: Int,
+    parentWidth: Dp,
+    contentPadding: PaddingValues,
+    pageSpacing: Dp,
+    peekWidth: Dp = 16.dp
+): PageSize {
+    val layoutDirection = LocalLayoutDirection.current
+
+    return remember(itemsSize, parentWidth, contentPadding, pageSpacing, peekWidth, layoutDirection) {
+        when (itemsSize) {
+            1 -> PageSize.Fill
+            2 -> {
+                val leftPadding = contentPadding.calculateLeftPadding(layoutDirection)
+                val rightPadding = contentPadding.calculateRightPadding(layoutDirection)
+
+                val cardWidth = parentWidth - leftPadding - rightPadding - pageSpacing - peekWidth
+                PageSize.Fixed(cardWidth)
+            }
+            else -> PageSize.Fill
         }
     }
 }

@@ -26,7 +26,7 @@ fun CustomCarousel(
 
     BoxWithConstraints(modifier = modifier) {
 
-        val dynamicPageSize = rememberCarouselPageSize_2(
+        val dynamicPageSize = rememberCarouselPageSize(
             itemsSize = items.size,
             parentWidth = maxWidth,
             contentPadding = carouselConfig.contentPadding,
@@ -64,11 +64,11 @@ fun CustomCarousel(
 private fun getCarouselConfig(
     numberOfItems: Int,
     infiniteScroll: Boolean
-): CarouselConfig_2 {
+): CarouselConfig {
 
     val (contentPadding, pageSpacing) = getPaddingAndSpacing(numberOfItems = numberOfItems)
 
-    return CarouselConfig_2(
+    return CarouselConfig(
         numberOfItems = numberOfItems,
         infiniteScroll = getPagerInfiniteScroll(
             infiniteScroll = infiniteScroll,
