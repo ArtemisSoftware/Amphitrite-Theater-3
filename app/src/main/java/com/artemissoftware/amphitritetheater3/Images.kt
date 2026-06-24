@@ -1,6 +1,4 @@
-package com.artemissoftware.amphitritetheater3.pager
-
-import com.artemissoftware.amphitritetheater3.R
+package com.artemissoftware.amphitritetheater3
 
 object Images {
 
