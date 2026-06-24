@@ -12,8 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.artemissoftware.amphitritetheater3.instazoom.InstaList
 import com.artemissoftware.amphitritetheater3.pager.CustomCarousel
-import com.artemissoftware.amphitritetheater3.pager.Images.cardImages
+import com.artemissoftware.amphitritetheater3.Images.cardImages
 import com.artemissoftware.amphitritetheater3.ui.theme.AmphitriteTheater3Theme
 
 class MainActivity : ComponentActivity() {
@@ -22,6 +23,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AmphitriteTheater3Theme {
+                InstaList()
+                /*
                 Box(modifier = Modifier.fillMaxSize()) {
                     CustomCarousel(
                         modifier = Modifier
@@ -30,6 +33,7 @@ class MainActivity : ComponentActivity() {
                         items = cardImages.take(2)
                     )
                 }
+                */
             }
         }
     }
