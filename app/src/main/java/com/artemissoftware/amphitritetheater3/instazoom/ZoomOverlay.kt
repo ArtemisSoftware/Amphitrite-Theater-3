@@ -49,9 +49,9 @@ fun ZoomOverlay(
     val density = LocalDensity.current
     val bounds = state.bounds
 
-    // Animated mirror of the gesture. `translation` is the full lift (centre the
-    // image on screen + follow the pan); at rest it is Zero, which leaves the image
-    // sitting exactly on its original card.
+    // Animated mirror of the gesture. `translation` follows the finger pan only;
+    // at rest it is Zero, which leaves the image sitting on its original card. The
+    // image is NOT lifted to the screen centre — it zooms in place.
     val scale = remember { Animatable(state.scale) }
     val translation = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
 
@@ -67,16 +67,12 @@ fun ZoomOverlay(
         val widthDp = with(density) { bounds.width.toDp() }
         val heightDp = with(density) { bounds.height.toDp() }
 
-        // Translation that moves the image's centre onto the screen centre, so the
-        // zoom always appears centred regardless of where the card sat in the list.
-        val screenCenter = Offset(constraints.maxWidth / 2f, constraints.maxHeight / 2f)
-        val centerTranslation = screenCenter - bounds.center
-
-        // Live pinch: mirror the reported values instantly (no animation lag).
-        LaunchedEffect(state.scale, state.offset, centerTranslation, state.releasing) {
+        // Live pinch: mirror the reported values instantly (no animation lag). The
+        // image stays put on its card and only follows the finger pan.
+        LaunchedEffect(state.scale, state.offset, state.releasing) {
             if (!state.releasing) {
                 scale.snapTo(state.scale)
-                translation.snapTo(centerTranslation + state.offset)
+                translation.snapTo(state.offset)
             }
         }
 
