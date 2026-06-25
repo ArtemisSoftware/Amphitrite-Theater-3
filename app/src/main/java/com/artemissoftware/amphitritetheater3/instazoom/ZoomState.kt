@@ -8,13 +8,16 @@ import androidx.compose.ui.geometry.Rect
  * Snapshot of an in-progress pinch-zoom. It is produced by [InstaCard] while the
  * gesture is alive and consumed by [ZoomOverlay], which only mirrors it visually.
  *
- * @param bounds the original image position in window coordinates.
- * @param scale  accumulated pinch scale (>= 1f).
- * @param offset accumulated pan (finger movement) in pixels.
+ * @param bounds    the original image position in window coordinates.
+ * @param scale     accumulated pinch scale (>= 1f).
+ * @param offset    accumulated pan (finger movement) in pixels.
+ * @param releasing true once the fingers lift: the overlay then eases the image
+ *                  back to [bounds] and fades the backdrop out before being dropped.
  */
 data class ZoomState(
     @DrawableRes val imageRes: Int,
     val bounds: Rect,
     val scale: Float = 1f,
-    val offset: Offset = Offset.Zero
+    val offset: Offset = Offset.Zero,
+    val releasing: Boolean = false
 )

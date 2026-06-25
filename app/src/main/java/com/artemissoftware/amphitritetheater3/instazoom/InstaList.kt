@@ -27,7 +27,11 @@ fun InstaList() {
     InstaListContent(
         state = zoomState,
         onZoom = { zoomState = it },
-        onZoomEnd = { zoomState = null }
+        // Fingers lifted: keep the state but flag it, so the overlay can animate the
+        // image home and fade the backdrop out instead of vanishing instantly.
+        onZoomEnd = { zoomState = zoomState?.copy(releasing = true) },
+        // Return-home animation finished: now the overlay can leave the tree.
+        onReleaseFinished = { zoomState = null }
     )
 }
 
@@ -35,7 +39,8 @@ fun InstaList() {
 private fun InstaListContent(
     state: ZoomState?,
     onZoom: (ZoomState) -> Unit,
-    onZoomEnd: () -> Unit
+    onZoomEnd: () -> Unit,
+    onReleaseFinished: () -> Unit
 ) {
 
     Box {
@@ -56,8 +61,9 @@ private fun InstaListContent(
             }
         }
 
-        // Drawn on top of the list; present only while a pinch is alive.
-        state?.let { ZoomOverlay(state = it) }
+        // Drawn on top of the list; present while a pinch is alive and during the
+        // return-home animation that follows it.
+        state?.let { ZoomOverlay(state = it, onReleaseFinished = onReleaseFinished) }
     }
 }
 
@@ -69,7 +75,8 @@ private fun InstaListContentPreview() {
         InstaListContent(
             state = null,
             onZoom = {},
-            onZoomEnd = {}
+            onZoomEnd = {},
+            onReleaseFinished = {}
         )
     }
 }
@@ -91,7 +98,8 @@ private fun InstaListContent_in_zoom_Preview() {
                 offset = Offset.Zero
             ),
             onZoom = {},
-            onZoomEnd = {}
+            onZoomEnd = {},
+            onReleaseFinished = {}
         )
     }
 }

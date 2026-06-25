@@ -27,6 +27,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
@@ -44,6 +45,10 @@ fun InstaCard(
     // Position of the image in window coordinates, captured on layout. The overlay
     // uses this to draw its copy exactly on top of the original.
     var bounds by remember { mutableStateOf(Rect.Zero) }
+
+    // Screen size in px, used to cap the zoom so the scaled image never grows past
+    // the full screen width or height.
+    val windowInfo = LocalWindowInfo.current
 
     Card {
         Column(
@@ -64,6 +69,21 @@ fun InstaCard(
                         awaitEachGesture {
                             awaitFirstDown(requireUnconsumed = false)
 
+                            // The most the image may grow: until it covers the full
+                            // screen in BOTH width and height. max() of the two ratios
+                            // is the cover scale — the larger dimension fills exactly,
+                            // the other spills past the edge. (The card image is almost
+                            // full-width already, so min() here would allow ~no zoom.)
+                            val container = windowInfo.containerSize
+                            val maxScale = if (bounds.width > 0f && bounds.height > 0f) {
+                                maxOf(
+                                    container.width / bounds.width,
+                                    container.height / bounds.height
+                                ).coerceAtLeast(1f)
+                            } else {
+                                1f
+                            }
+
                             var scale = 1f
                             var pan = Offset.Zero
                             var zooming = false
@@ -76,14 +96,17 @@ fun InstaCard(
                                 // finger falls through so the LazyColumn can scroll.
                                 if (pressedCount >= 2) {
                                     zooming = true
-                                    scale *= event.calculateZoom()
+                                    // The harder the pinch, the larger the scale —
+                                    // up to maxScale (a full-screen image).
+                                    scale = (scale * event.calculateZoom())
+                                        .coerceIn(1f, maxScale)
                                     pan += event.calculatePan()
 
                                     onZoom(
                                         ZoomState(
                                             imageRes = imageRes,
                                             bounds = bounds,
-                                            scale = scale.coerceAtLeast(1f),
+                                            scale = scale,
                                             offset = pan
                                         )
                                     )
