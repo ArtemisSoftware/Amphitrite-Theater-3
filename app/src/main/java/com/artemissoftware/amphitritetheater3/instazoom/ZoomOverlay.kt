@@ -1,5 +1,6 @@
 package com.artemissoftware.amphitritetheater3.instazoom
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
@@ -22,6 +23,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import com.artemissoftware.amphitritetheater3.Images.cardImages
 import com.artemissoftware.amphitritetheater3.ui.theme.AmphitriteTheater3Theme
 import kotlinx.coroutines.joinAll
@@ -29,6 +36,20 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 private const val RELEASE_DURATION_MS = 300
+
+/**
+ * Pins the overlay popup to the window's top-left (0, 0) and lets it fill the whole
+ * window. This is what lets the overlay sit ABOVE a Scaffold's top bar and stay
+ * aligned with [ZoomState.bounds], which are reported in window coordinates.
+ */
+private val WindowOriginPositionProvider = object : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize
+    ): IntOffset = IntOffset.Zero
+}
 
 /**
  * Pure visual mirror of an in-progress pinch. It owns no gesture state: it draws
@@ -41,6 +62,7 @@ private const val RELEASE_DURATION_MS = 300
  * the image slides back onto its original card and the backdrop fades out — then
  * calls [onReleaseFinished] so the caller can drop the state and leave the tree.
  */
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun ZoomOverlay(
     state: ZoomState,
@@ -59,6 +81,14 @@ fun ZoomOverlay(
     // fades back out as the image returns home on release.
     val backgroundAlpha = ((scale.value - 1f) / 2f).coerceIn(0f, 0.8f)
 
+    // Rendered in its own window-level layer so it draws on TOP of everything —
+    // including a Scaffold's top bar — and is anchored to the window origin so the
+    // window-coordinate `bounds` line up exactly with the original card.
+    Popup(
+        popupPositionProvider = WindowOriginPositionProvider,
+        // Let the dimmed backdrop and the scaled image spill to the screen edges.
+        properties = PopupProperties(clippingEnabled = false)
+    ) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -104,6 +134,7 @@ fun ZoomOverlay(
                     transformOrigin = TransformOrigin.Center
                 }
         )
+    }
     }
 }
 
